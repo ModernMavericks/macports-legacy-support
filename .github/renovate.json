@@ -4,7 +4,7 @@
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["^UPSTREAM_VERSION$"],
+      "managerFilePatterns": ["/^UPSTREAM_VERSION$/"],
       "matchStrings": ["^(?<currentValue>.+?)\\s*$"],
       "depNameTemplate": "macports/macports-legacy-support",
       "packageNameTemplate": "macports/macports-legacy-support",
