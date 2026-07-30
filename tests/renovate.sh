@@ -12,7 +12,9 @@ m = [x for x in cm if x.get("depNameTemplate") == "macports/macports-legacy-supp
 assert m, "no customManager for upstream"
 m = m[0]
 assert m["datasourceTemplate"] == "github-tags", "wrong datasource"
-assert m["fileMatch"] == ["^UPSTREAM_VERSION$"], "wrong fileMatch"
+# Renovate renamed fileMatch -> managerFilePatterns, and the value is a regex literal (/.../).
+# This assertion still said fileMatch long after the config moved on: nothing ever ran it to notice.
+assert m["managerFilePatterns"] == ["/^UPSTREAM_VERSION$/"], "wrong managerFilePatterns"
 assert "extractVersionTemplate" in m, "must strip the leading v"
 print("renovate OK")
 PY

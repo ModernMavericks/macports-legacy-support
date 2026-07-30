@@ -46,10 +46,18 @@ jobs:
 
       - name: Resolve the installed shared-cmake scripts dir
         id: msc
+        # install@v1 exports $MSC_SCRIPTS; this only re-publishes it as a step output for the steps
+        # below that already reference steps.msc.outputs.scripts.
         run: |
-          dir="$(cat "$HOME/.cmake/packages/MavericksSharedCMake/"* | head -1)/scripts"
-          [ -d "$dir" ] || { echo "::error::shared-cmake scripts not found at $dir"; exit 1; }
-          echo "scripts=$dir" >> "$GITHUB_OUTPUT"
+          [ -d "$MSC_SCRIPTS" ] || { echo "::error::MSC_SCRIPTS not set by install@v1"; exit 1; }
+          echo "scripts=$MSC_SCRIPTS" >> "$GITHUB_OUTPUT"
+
+      # The shared runner takes the whole top-level suite, so a newly added test runs the day it
+      # lands. This repo is why that matters: nine test files CI never ran, two of them rotted -- one
+      # asserting Renovate's pre-migration fileMatch key, one checking an .icns filename that changed
+      # when the repo was renamed. Neither was a product bug; both were invisible.
+      - name: Run the repo's tests
+        run: sh "$MSC_SCRIPTS/run-repo-tests.sh"
 
       - name: Compute version
         id: ver
