@@ -1,14 +1,19 @@
 #!/bin/sh
 set -eu
 cd "$(dirname "$0")/.."
-# Sanctioned LOCAL install of shared-cmake (README "Install (once)"). CI uses the action instead --
-# so in CI there is no sibling checkout to install from and this test is not applicable: exit 77 =
-# SKIP (the family convention). It failed outright until the suite started running in CI.
-[ -d ../mavericks-shared-cmake ] || { echo "no sibling shared-cmake checkout (CI uses the action) -- skipping" >&2; exit 77; }
-MSC_SRC="$(cd ../mavericks-shared-cmake && pwd)"
 tmp="$(mktemp -d)"
-cmake -S "$MSC_SRC" -B "$tmp/msc" >/dev/null
-cmake --install "$tmp/msc" --prefix "$HOME/.local" >/dev/null
+# Prefer the INSTALLED shared-cmake: that is what CI has (install@v1) and what a release is built
+# against. Building one from a sibling working copy would test against whatever is checked out there
+# -- possibly dirty or unpushed -- and installing it into $HOME/.local is a global side effect a test
+# has no business having. Fall back to the sibling only on a dev box that has never installed it, and
+# skip (77) when there is neither.
+if ! ls "$HOME/.cmake/packages/MavericksSharedCMake/"* >/dev/null 2>&1; then
+  [ -d ../mavericks-shared-cmake ] || { echo "no installed shared-cmake and no sibling checkout -- skipping" >&2; exit 77; }
+  echo "note: no installed shared-cmake; installing from the sibling checkout (README 'Install (once)')" >&2
+  MSC_SRC="$(cd ../mavericks-shared-cmake && pwd)"
+  cmake -S "$MSC_SRC" -B "$tmp/msc" >/dev/null
+  cmake --install "$tmp/msc" --prefix "$HOME/.local" >/dev/null
+fi
 
 printf '1.5.2-mavericks.1\n' > VERSION
 B="$tmp/updater"
