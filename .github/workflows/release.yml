@@ -6,7 +6,7 @@ name: release
 #     v<upstream>-mavericks.1. Otherwise build only (CI smoke), no release.
 #   - workflow_dispatch (local_release=true): cut the next v<upstream>-mavericks.(N+1).
 #   - v* tag: publish that exact version.
-# gh release create makes the tag as part of publishing, so there is no second-hop trigger
+# the shared publish-release.yml makes the tag as part of publishing, so there is no second-hop trigger
 # problem (GITHUB_TOKEN cannot retrigger a tag workflow) and no PAT is needed.
 
 on:
@@ -32,6 +32,9 @@ concurrency:
 jobs:
   build:
     runs-on: macos-26   # Apple Silicon; cross-builds x86_64/10.9. Use macos-15 if 26 is unavailable.
+    outputs:
+      version: ${{ steps.ver.outputs.full }}
+      publish: ${{ steps.ver.outputs.release }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -122,24 +125,24 @@ jobs:
           mkdir -p dist
           cp "build/out/macports-legacy-support-${{ steps.ver.outputs.full }}.pkg" dist/
           [ -f build/out/appcast.xml ] && cp build/out/appcast.xml dist/ || true
-          ( cd dist && shasum -a 256 *.pkg > SHA256SUMS )
+          # The body travels IN the artifact: publish-release.yml does not check out the repo.
+          # release-notes-file.sh guarantees a non-empty file. No SHA256SUMS here -- the shared
+          # workflow regenerates it over everything it attaches.
+          NOTES="$(sh build/release-notes-file.sh "${{ steps.ver.outputs.tag }}" "${{ steps.ver.outputs.full }}" || true)"
+          if [ -n "$NOTES" ] && [ -s "$NOTES" ]; then cp "$NOTES" dist/RELEASE_NOTES.md
+          else printf '## %s\n\nAutomated release.\n' "${{ steps.ver.outputs.full }}" > dist/RELEASE_NOTES.md; fi
 
       - uses: actions/upload-artifact@v7
         with:
           name: mavericks-legacysupport
           path: dist/*
 
-      - name: Publish GitHub Release
-        if: steps.ver.outputs.release == 'yes'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          TAG="${{ steps.ver.outputs.tag }}"
-          NOTES="release-notes/${TAG}.md"
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" dist/* --clobber
-          elif [ -f "$NOTES" ]; then
-            gh release create "$TAG" dist/* --title "$TAG" --notes-file "$NOTES"
-          else
-            gh release create "$TAG" dist/* --title "$TAG" --generate-notes
-          fi
+  publish:
+    if: needs.build.outputs.publish == 'yes'
+    needs: [build]
+    permissions:
+      contents: write
+    uses: ModernMavericks/shared-cmake/.github/workflows/publish-release.yml@v1
+    with:
+      version: ${{ needs.build.outputs.version }}
+      artifact: mavericks-legacysupport
