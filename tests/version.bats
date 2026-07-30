@@ -2,9 +2,10 @@ setup() {
   REPO="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
   TMP="$(mktemp -d)"
   printf '1.5.2\n' > "$TMP/UPSTREAM_VERSION"
-  cp "$REPO/build/lib.sh" "$REPO/build/version.sh" "$TMP/" 2>/dev/null || true
   mkdir -p "$TMP/build"
-  cp "$REPO/build/lib.sh" "$REPO/build/version.sh" "$TMP/build/"
+  # Copy the WHOLE scaffolding, not a named subset: version.sh is a thin wrapper that sources
+  # msc.sh to locate the shared implementation, so cherry-picking files silently breaks it.
+  cp "$REPO"/build/*.sh "$TMP/build/"
 }
 teardown() { rm -rf "$TMP"; }
 run_ver() { ( cd "$TMP" && MAVERICKS_TAGS="$1" sh build/version.sh "$2" ); }
