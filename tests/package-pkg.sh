@@ -1,6 +1,10 @@
 #!/bin/sh
 set -eu
 cd "$(dirname "$0")/.."
+# Installs shared-cmake from a sibling checkout (see below), which CI does not have -- it uses the
+# action. Not applicable there: exit 77 = SKIP (the family convention), rather than failing a run that
+# was never going to have a sibling. It failed outright until the suite started running in CI.
+[ -d ../mavericks-shared-cmake ] || { echo "no sibling shared-cmake checkout (CI uses the action) -- skipping" >&2; exit 77; }
 STAGE="$(mktemp -d)/stage"
 SDK="$(xcrun --show-sdk-path)" sh build/build-lib.sh "$STAGE" >/dev/null
 

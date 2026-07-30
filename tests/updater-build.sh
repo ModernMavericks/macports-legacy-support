@@ -1,7 +1,10 @@
 #!/bin/sh
 set -eu
 cd "$(dirname "$0")/.."
-# Sanctioned LOCAL install of shared-cmake (README "Install (once)"). CI uses the action instead.
+# Sanctioned LOCAL install of shared-cmake (README "Install (once)"). CI uses the action instead --
+# so in CI there is no sibling checkout to install from and this test is not applicable: exit 77 =
+# SKIP (the family convention). It failed outright until the suite started running in CI.
+[ -d ../mavericks-shared-cmake ] || { echo "no sibling shared-cmake checkout (CI uses the action) -- skipping" >&2; exit 77; }
 MSC_SRC="$(cd ../mavericks-shared-cmake && pwd)"
 tmp="$(mktemp -d)"
 cmake -S "$MSC_SRC" -B "$tmp/msc" >/dev/null
