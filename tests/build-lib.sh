@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 cd "$(dirname "$0")/.."
-TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
+TMP="$(mktemp -d "${TMPDIR:-/tmp}/build-lib.XXXXXX")"; trap 'rm -rf "$TMP"' EXIT   # template: 10.9 BSD mktemp requires one
 STAGE="$TMP/stage"
 SDK="$(xcrun --show-sdk-path)" sh build/build-lib.sh "$STAGE" >/dev/null
 lib="$STAGE/usr/local/lib"

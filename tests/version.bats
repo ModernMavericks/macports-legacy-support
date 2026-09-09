@@ -1,6 +1,6 @@
 setup() {
   REPO="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
-  TMP="$(mktemp -d)"
+  TMP="$(mktemp -d "${TMPDIR:-/tmp}/version-bats.XXXXXX")"   # template: 10.9 BSD mktemp requires one
   printf '1.5.2\n' > "$TMP/UPSTREAM_VERSION"
   mkdir -p "$TMP/build"
   # Copy the WHOLE scaffolding, not a named subset: version.sh is a thin wrapper that sources

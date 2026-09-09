@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 cd "$(dirname "$0")/.."
-tmp="$(mktemp -d)"
+tmp="$(mktemp -d "${TMPDIR:-/tmp}/updater-build.XXXXXX")"   # template: 10.9 BSD mktemp requires one
 # Prefer the INSTALLED shipyard: that is what CI has (install@v1) and what a release is built
 # against. Building one from a sibling working copy would test against whatever is checked out there
 # -- possibly dirty or unpushed -- and installing it into $HOME/.local is a global side effect a test

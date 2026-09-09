@@ -1,11 +1,11 @@
 #!/bin/sh
 set -eu
 cd "$(dirname "$0")/.."
-STAGE="$(mktemp -d)/stage"
+STAGE="$(mktemp -d "${TMPDIR:-/tmp}/package-pkg.XXXXXX")/stage"   # template: 10.9 BSD mktemp requires one
 SDK="$(xcrun --show-sdk-path)" sh build/build-lib.sh "$STAGE" >/dev/null
 
 printf '1.5.2-mavericks.1\n' > VERSION
-tmp="$(mktemp -d)"
+tmp="$(mktemp -d "${TMPDIR:-/tmp}/package-pkg-tmp.XXXXXX")"   # template: 10.9 BSD mktemp requires one
 # Prefer the INSTALLED shipyard: that is what CI has (install@v1) and what a release is built
 # against. Building one from a sibling working copy tests against whatever is checked out there --
 # possibly dirty or unpushed -- and installing it into $HOME/.local is a global side effect a test has
@@ -23,7 +23,7 @@ OUT="$tmp/out"
 pkg="$(STAGE="$STAGE" UPD_APP="$tmp/updater/LegacySupportUpdater.app" \
        VERSION=1.5.2-mavericks.1 OUT="$OUT" sh build/package-pkg.sh)"
 [ -f "$pkg" ] || { echo "no pkg produced"; exit 1; }
-X="$(mktemp -d)"; pkgutil --expand "$pkg" "$X/x"
+X="$(mktemp -d "${TMPDIR:-/tmp}/package-pkg-x.XXXXXX")"; pkgutil --expand "$pkg" "$X/x"   # template: 10.9 BSD mktemp requires one
 grep -q 'os-version min="10.9.5"' "$X/x/Distribution" || { echo "10.9.5 floor missing"; exit 1; }
 # payload must carry the library, the updater .app, and the LaunchAgent.
 # On this host, `pkgutil --expand` of a productbuild archive leaves each
