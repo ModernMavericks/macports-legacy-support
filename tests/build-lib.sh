@@ -8,7 +8,7 @@ lib="$STAGE/usr/local/lib"
 for f in libMacportsLegacySupport.a libMacportsLegacySupport.dylib; do
   [ -f "$lib/$f" ] || { echo "missing $f"; exit 1; }
 done
-[ "$(lipo -archs "$lib/libMacportsLegacySupport.dylib")" = x86_64 ] || { echo "dylib not x86_64-only"; exit 1; }
+[ "$(lipo -info "$lib/libMacportsLegacySupport.dylib" | sed -n 's/.*: //p' | xargs)" = x86_64 ] || { echo "dylib not x86_64-only"; exit 1; }
 otool -l "$lib/libMacportsLegacySupport.dylib" | grep -A2 LC_VERSION_MIN_MACOSX | grep -q 'version 10.9' \
   || { echo "dylib min is not 10.9"; exit 1; }
 [ -d "$STAGE/usr/local/include/LegacySupport" ] || { echo "headers not installed"; exit 1; }
