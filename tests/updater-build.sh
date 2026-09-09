@@ -2,15 +2,15 @@
 set -eu
 cd "$(dirname "$0")/.."
 tmp="$(mktemp -d)"
-# Prefer the INSTALLED shared-cmake: that is what CI has (install@v1) and what a release is built
+# Prefer the INSTALLED shipyard: that is what CI has (install@v1) and what a release is built
 # against. Building one from a sibling working copy would test against whatever is checked out there
 # -- possibly dirty or unpushed -- and installing it into $HOME/.local is a global side effect a test
 # has no business having. Fall back to the sibling only on a dev box that has never installed it, and
 # skip (77) when there is neither.
-if ! ls "$HOME/.cmake/packages/MavericksSharedCMake/"* >/dev/null 2>&1; then
-  [ -d ../mavericks-shared-cmake ] || { echo "no installed shared-cmake and no sibling checkout -- skipping" >&2; exit 77; }
-  echo "note: no installed shared-cmake; installing from the sibling checkout (README 'Install (once)')" >&2
-  MSC_SRC="$(cd ../mavericks-shared-cmake && pwd)"
+if ! ls "$HOME/.cmake/packages/MavericksShipyard/"* >/dev/null 2>&1; then
+  [ -d ../mavericks-shipyard ] || { echo "no installed shipyard and no sibling checkout -- skipping" >&2; exit 77; }
+  echo "note: no installed shipyard; installing from the sibling checkout (README 'Install (once)')" >&2
+  MSC_SRC="$(cd ../mavericks-shipyard && pwd)"
   cmake -S "$MSC_SRC" -B "$tmp/msc" >/dev/null
   cmake --install "$tmp/msc" --prefix "$HOME/.local" >/dev/null
 fi

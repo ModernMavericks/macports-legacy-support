@@ -1,6 +1,6 @@
 #!/bin/sh
 # Cross-build macports-legacy-support to x86_64 / min-10.9 and DESTDIR-install into a
-# staging root. Uses the 10.9 SDK ($SDK if set, else mavericks-shared-cmake's fetch script).
+# staging root. Uses the 10.9 SDK ($SDK if set, else mavericks-shipyard's fetch script).
 set -eu
 SELF="$(cd "$(dirname "$0")" && pwd)"
 MLS_ROOT="$(cd "$SELF/.." && pwd)"; export MLS_ROOT

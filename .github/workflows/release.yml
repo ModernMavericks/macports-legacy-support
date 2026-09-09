@@ -40,27 +40,27 @@ jobs:
         with:
           fetch-depth: 0   # version.sh needs the full tag history
 
-      - name: Install mavericks-shared-cmake
-        # shared-cmake installs itself via its own action (self-registers in the CMake user
+      - name: Install mavericks-shipyard
+        # shipyard installs itself via its own action (self-registers in the CMake user
         # package registry). We do NOT clone it, hand-run cmake install, or vendor it as a
         # nested git checkout. @v1 is the moving major tag; Renovate's github-actions manager
         # tracks it (no SHA, no marker comment).
-        uses: ModernMavericks/shared-cmake/.github/actions/install@v1
+        uses: ModernMavericks/shipyard/.github/actions/install@v1
 
-      - name: Resolve the installed shared-cmake scripts dir
+      - name: Resolve the installed shipyard scripts dir
         id: msc
-        # install@v1 exports $MSC_SCRIPTS; this only re-publishes it as a step output for the steps
+        # install@v1 exports $SHIPYARD_SCRIPTS; this only re-publishes it as a step output for the steps
         # below that already reference steps.msc.outputs.scripts.
         run: |
-          [ -d "$MSC_SCRIPTS" ] || { echo "::error::MSC_SCRIPTS not set by install@v1"; exit 1; }
-          echo "scripts=$MSC_SCRIPTS" >> "$GITHUB_OUTPUT"
+          [ -d "$SHIPYARD_SCRIPTS" ] || { echo "::error::SHIPYARD_SCRIPTS not set by install@v1"; exit 1; }
+          echo "scripts=$SHIPYARD_SCRIPTS" >> "$GITHUB_OUTPUT"
 
       # The shared runner takes the whole top-level suite, so a newly added test runs the day it
       # lands. This repo is why that matters: nine test files CI never ran, two of them rotted -- one
       # asserting Renovate's pre-migration fileMatch key, one checking an .icns filename that changed
       # when the repo was renamed. Neither was a product bug; both were invisible.
       - name: Run the repo's tests
-        run: sh "$MSC_SCRIPTS/run-repo-tests.sh"
+        run: sh "$SHIPYARD_SCRIPTS/run-repo-tests.sh"
 
       - name: Compute version
         id: ver
@@ -138,12 +138,12 @@ jobs:
       - name: Artifact conformance
         if: steps.ver.outputs.release == 'yes'
         run: |
-          sh "$MSC_SCRIPTS/artifact-facts.sh" dist "${{ steps.ver.outputs.full }}" \
-            | sh "$MSC_SCRIPTS/check-artifact-conformance.sh"
+          sh "$SHIPYARD_SCRIPTS/artifact-facts.sh" dist "${{ steps.ver.outputs.full }}" \
+            | sh "$SHIPYARD_SCRIPTS/check-artifact-conformance.sh"
           # Behavior gate: a client on the previous release must SEE this as an upgrade -- a numeric
           # sparkle:version that orders strictly after the last published one (ordering conformance
           # never exercised; the gap the "-mavericks.N compares EQUAL" bug shipped through).
-          sh "$MSC_SCRIPTS/assert_appcast_upgradeable.sh" --appcast dist/appcast.xml --version "${{ steps.ver.outputs.full }}"
+          sh "$SHIPYARD_SCRIPTS/assert_appcast_upgradeable.sh" --appcast dist/appcast.xml --version "${{ steps.ver.outputs.full }}"
 
       - uses: actions/upload-artifact@v7
         with:
@@ -155,7 +155,7 @@ jobs:
     needs: [build]
     permissions:
       contents: write
-    uses: ModernMavericks/shared-cmake/.github/workflows/publish-release.yml@v1
+    uses: ModernMavericks/shipyard/.github/workflows/publish-release.yml@v1
     with:
       version: ${{ needs.build.outputs.version }}
       artifact: mavericks-legacysupport

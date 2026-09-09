@@ -7,9 +7,9 @@ set(CMAKE_OSX_ARCHITECTURES x86_64 CACHE STRING "Intel-only (10.9)")
 
 project(LegacySupportUpdater LANGUAGES OBJC)
 
-# CORRECT shared-cmake usage: resolved via the user package registry (installed by the
+# CORRECT shipyard usage: resolved via the user package registry (installed by the
 # CI action, or locally per the README "Install (once)"). Never vendored/submoduled.
-find_package(MavericksSharedCMake REQUIRED)
+find_package(MavericksShipyard REQUIRED)
 include(Mavericks)          # universal umbrella: AppleClang gate + build conventions
 include(MavericksSparkle)   # the Sparkle updater .app builder
 
