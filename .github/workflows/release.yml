@@ -169,7 +169,7 @@ jobs:
   # piece of the signing key. shipyard's publish-release.yml looks for this job's record on any signed
   # release; it cannot run the scan itself (reading job logs needs actions: read).
   scan:
-    if: needs.build.outputs.publish == 'yes'
+    if: always() && (needs.build.outputs.publish == 'yes')   # a build that fails after signing left logs too; scan them
     needs: [build]
     permissions:
       actions: read     # this run's job logs
