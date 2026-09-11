@@ -122,7 +122,8 @@ jobs:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
           GH_TOKEN: ${{ github.token }}   # sign_and_appcast.sh fetches ed25519-sign via `gh` -> needs auth (else 403 rate-limit)
         run: |
-          [ -n "$SPARKLE_PRIVATE_KEY" ] || { echo "::error::SPARKLE_PRIVATE_KEY secret not set"; exit 1; }
+          # printenv, not [ -n "$SPARKLE_PRIVATE_KEY" ]: the shell never expands the key, so no trace can print it
+          printenv SPARKLE_PRIVATE_KEY | grep -q . || { echo "::error::SPARKLE_PRIVATE_KEY secret not set"; exit 1; }
           SCRIPTS='${{ steps.msc.outputs.scripts }}'
           FULL="${{ steps.ver.outputs.full }}"; TAG="${{ steps.ver.outputs.tag }}"
           PKG="build/out/macports-legacy-support-${FULL}.pkg"
@@ -164,9 +165,24 @@ jobs:
           name: mavericks-legacysupport
           path: dist/*
 
-  publish:
+  # Before anything is published: no log of this run, and no file about to be released, carries a
+  # piece of the signing key. shipyard's publish-release.yml looks for this job's record on any signed
+  # release; it cannot run the scan itself (reading job logs needs actions: read).
+  scan:
     if: needs.build.outputs.publish == 'yes'
     needs: [build]
+    permissions:
+      actions: read     # this run's job logs
+      contents: read
+    uses: ModernMavericks/shipyard/.github/workflows/scan-for-key.yml@v1
+    with:
+      artifact: mavericks-legacysupport
+    secrets:
+      SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+
+  publish:
+    if: needs.build.outputs.publish == 'yes'
+    needs: [build, scan]
     permissions:
       contents: write
     uses: ModernMavericks/shipyard/.github/workflows/publish-release.yml@v1
