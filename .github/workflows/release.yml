@@ -116,6 +116,18 @@ jobs:
           VERSION="${{ steps.ver.outputs.full }}" \
           sh build/package-pkg.sh
 
+      # Generate the single notes file ONCE, before it has two consumers: the appcast's <description>
+      # (next step) and the release body, which travels IN the artifact because publish-release.yml
+      # does not check out the repo (dist/RELEASE_NOTES.md is uploaded below with the rest of dist/*).
+      # Same bytes, same file, read twice -- so the Release page and Sparkle tell one story.
+      - name: Generate release notes
+        if: steps.ver.outputs.release == 'yes'
+        run: |
+          set -eu
+          sh "$SHIPYARD_SCRIPTS/release-notes.sh" \
+            --tag "${{ steps.ver.outputs.tag }}" --version "${{ steps.ver.outputs.full }}" \
+            --product 'MacPorts legacy-support' --min-os 10.9.5 --out dist/RELEASE_NOTES.md
+
       - name: EdDSA-sign the .pkg + generate the appcast
         if: steps.ver.outputs.release == 'yes'
         env:
@@ -128,10 +140,9 @@ jobs:
           FULL="${{ steps.ver.outputs.full }}"; TAG="${{ steps.ver.outputs.tag }}"
           PKG="build/out/macports-legacy-support-${FULL}.pkg"
           URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/$(basename "$PKG")"
-          NOTES="$(sh build/release-notes-file.sh "$TAG" "$FULL")"
           sh "$SCRIPTS/sign_and_appcast.sh" \
             --channel-title "MacPorts legacy-support (Mavericks)" --version "$FULL" \
-            --pkg-url "$URL" --notes-file "$NOTES" --pkg "$PKG" --min-os 10.9.5 \
+            --pkg-url "$URL" --notes-file dist/RELEASE_NOTES.md --pkg "$PKG" --min-os 10.9.5 \
             > build/out/appcast.xml
           cat build/out/appcast.xml
 
@@ -140,12 +151,6 @@ jobs:
           mkdir -p dist
           cp "build/out/macports-legacy-support-${{ steps.ver.outputs.full }}.pkg" dist/
           [ -f build/out/appcast.xml ] && cp build/out/appcast.xml dist/ || true
-          # The body travels IN the artifact: publish-release.yml does not check out the repo.
-          # release-notes-file.sh guarantees a non-empty file. No SHA256SUMS here -- the shared
-          # workflow regenerates it over everything it attaches.
-          NOTES="$(sh build/release-notes-file.sh "${{ steps.ver.outputs.tag }}" "${{ steps.ver.outputs.full }}" || true)"
-          if [ -n "$NOTES" ] && [ -s "$NOTES" ]; then cp "$NOTES" dist/RELEASE_NOTES.md
-          else printf '## %s\n\nAutomated release.\n' "${{ steps.ver.outputs.full }}" > dist/RELEASE_NOTES.md; fi
 
       # Conformance: do the artifacts about to be published agree with each other and with the
       # family's schemes? Gated like the signing step -- a non-publishing build has no appcast, and
